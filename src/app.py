@@ -10,46 +10,113 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
+import requests
+import time
 
 from floorplan import makeplan
 
+DENSITY_DETECTION = 'Density Detection'
+MASK_DETECTION = 'Face-Mask Detection'
+
+API_BASE_URL = "https://a-team-mall-api.herokuapp.com/"
+
+def load_density_data():
+    x_coords = []
+    y_coords = []
+    sizes = []
+    density_url = API_BASE_URL + "density"
+    r = requests.get(density_url)
+    if r.status_code == 200:
+        content = r.json()
+        x_coords = [item['x'] for item in content]
+        y_coords = [item['y'] for item in content]
+        sizes = [item['count'] for item in content]
+
+    return x_coords, y_coords, sizes
+
+def load_mask_data():
+    with_mask = -1
+    without_mask = -1
+    mask_url = API_BASE_URL + "mask"
+
+    r = requests.get(mask_url)
+    if r.status_code == 200:
+        content = r.json()
+        for item in content:
+            if item['type'] == 'with':
+                with_mask = item['count']
+            elif item['type'] == 'without':
+                without_mask = item['count']
+
+    return with_mask, without_mask
+
+
 st.title('Mall-monitor by <A-Team>')
+
+# Add a selectbox to the sidebar:
+add_selectbox = st.sidebar.selectbox(
+    'Choose Application',
+    (DENSITY_DETECTION, MASK_DETECTION)
+)
 
 fig = go.Figure()
 
-makeplan(fig)
+if add_selectbox == DENSITY_DETECTION:
+    makeplan(fig)
 
-size = [20, 40, 60, 80, 100, 80, 60, 40, 20, 40, 60, 20, 10, 5]
+    # size = [20, 40, 60, 80, 100, 80, 60, 40, 20, 40, 60, 20, 10, 5]
+    x_coords, y_coords, sizes = load_density_data()
 
-fig.add_trace(go.Scatter(
-    x=[10, 10, 10, 40, 70, 97, 97, 90, 63, 30, 40, 40, 70, 70],
-    y=[10, 25, 40, 45, 45, 40, 20, 5, 5, 5, 20, 30, 20, 30],
-    mode='markers',
-    marker=dict(
-        size=size,
-        sizemode='area',
-        sizeref=2.*max(size)/(40.**2),
-        sizemin=4
+    fig.add_trace(go.Scatter(
+        # x=[10, 10, 10, 40, 70, 97, 97, 90, 63, 30, 40, 40, 70, 70],
+        # y=[10, 25, 40, 45, 45, 40, 20, 5, 5, 5, 20, 30, 20, 30],
+        x=x_coords,
+        y=y_coords,
+        mode='markers',
+        marker=dict(
+            size=sizes,
+            sizemode='area',
+            sizeref=2.*max(sizes)/(40.**2),
+            sizemin=4
+        )
+    ))
+
+    fig.update_shapes(dict(xref='x', yref='y'))
+
+    fig.update_layout(
+        autosize=False,
+        width=735,
+        height=350,
+        margin=dict(
+            l=0,
+            r=0,
+            b=0,
+            t=0,
+            pad=0
+        ),
+        showlegend=False
     )
-))
 
-fig.update_shapes(dict(xref='x', yref='y'))
+elif add_selectbox == MASK_DETECTION:
+    with_mask, without_mask = load_mask_data()
+    fig.add_trace(go.Bar(x=['Mask', 'No-Mask'], y=[with_mask, without_mask]))
 
-fig.update_layout(
-    autosize=False,
-    width=735,
-    height=350,
-    margin=dict(
-        l=0,
-        r=0,
-        b=0,
-        t=0,
-        pad=0
-    ),
-    showlegend=False
-)
+    fig.update_layout(
+        autosize=False,
+        width=735,
+        height=350,
+        margin=dict(
+            l=0,
+            r=0,
+            b=0,
+            t=0,
+            pad=0
+        )
+    )
 
-st.plotly_chart(fig)
+st.plotly_chart(fig)        
+st.button("Refresh")
+    # print(fig.data[-1])
 
 # DATE_COLUMN = 'date/time'
 # DATA_URL = ('https://s3-us-west-2.amazonaws.com/'
