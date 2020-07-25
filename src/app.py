@@ -46,6 +46,7 @@ fig.update_layout(
         t=0,
         pad=0
     ),
+    showlegend=False
 )
 
 st.plotly_chart(fig)
