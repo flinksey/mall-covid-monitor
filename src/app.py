@@ -25,6 +25,7 @@ def load_density_data():
     y_coords = []
     sizes = []
     density_url = API_BASE_URL + "density"
+    
     r = requests.get(density_url)
     if r.status_code == 200:
         content = r.json()
@@ -35,23 +36,25 @@ def load_density_data():
     return x_coords, y_coords, sizes
 
 def load_mask_data():
-    with_mask = -1
-    without_mask = -1
+    x_coords = []
+    y_coords = []
+    masks = []
+    nomasks = []
     mask_url = API_BASE_URL + "mask"
 
     r = requests.get(mask_url)
     if r.status_code == 200:
         content = r.json()
-        for item in content:
-            if item['type'] == 'with':
-                with_mask = item['count']
-            elif item['type'] == 'without':
-                without_mask = item['count']
+        x_coords = [item['x'] for item in content]
+        y_coords = [item['y'] for item in content]
+        masks = [item['mask'] for item in content]
+        nomasks = [item['nomask'] for item in content]
 
-    return with_mask, without_mask
+    return x_coords, y_coords, masks, nomasks
 
 
 st.title('Mall-monitor by <A-Team>')
+st.header('')
 
 # Add a selectbox to the sidebar:
 add_selectbox = st.sidebar.selectbox(
@@ -60,6 +63,7 @@ add_selectbox = st.sidebar.selectbox(
 )
 
 fig = go.Figure()
+mask_fig = go.Figure()
 
 if add_selectbox == DENSITY_DETECTION:
     makeplan(fig)
@@ -98,10 +102,13 @@ if add_selectbox == DENSITY_DETECTION:
     )
 
 elif add_selectbox == MASK_DETECTION:
-    with_mask, without_mask = load_mask_data()
-    fig.add_trace(go.Bar(x=['Mask', 'No-Mask'], y=[with_mask, without_mask]))
+    x_coords, y_coords, masks, nomasks = load_mask_data()
+
+    fig.add_trace(go.Bar(x=["ST" + str(i+1) for i in range(len(x_coords))], y=masks, name='Mask'))
+    fig.add_trace(go.Bar(x=["ST" + str(i+1) for i in range(len(x_coords))], y=nomasks, name='No Mask'))
 
     fig.update_layout(
+        barmode='stack',
         autosize=False,
         width=735,
         height=350,
