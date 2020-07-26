@@ -79,6 +79,7 @@ if add_selectbox == DENSITY_DETECTION:
         # y=[10, 25, 40, 45, 45, 40, 20, 5, 5, 5, 20, 30, 20, 30],
         x=x_coords,
         y=y_coords,
+        text=['Count: ' + str(count) for count in sizes],
         mode='markers',
         marker=dict(
             size=sizes,
