@@ -71,6 +71,9 @@ if add_selectbox == DENSITY_DETECTION:
     # size = [20, 40, 60, 80, 100, 80, 60, 40, 20, 40, 60, 20, 10, 5]
     x_coords, y_coords, sizes = load_density_data()
 
+    sizes_temp = sizes
+    sizes_temp.append(50)
+
     fig.add_trace(go.Scatter(
         # x=[10, 10, 10, 40, 70, 97, 97, 90, 63, 30, 40, 40, 70, 70],
         # y=[10, 25, 40, 45, 45, 40, 20, 5, 5, 5, 20, 30, 20, 30],
@@ -80,8 +83,8 @@ if add_selectbox == DENSITY_DETECTION:
         marker=dict(
             size=sizes,
             sizemode='area',
-            sizeref=2.*max(sizes)/(40.**2),
-            sizemin=4
+            sizeref=2.*max(sizes_temp)/(40.**2),
+            sizemin=1
         )
     ))
 
